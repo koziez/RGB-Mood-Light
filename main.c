@@ -62,7 +62,6 @@ void uart_message_process(void);
 static uint8_t uart_checksum(uint8_t* pBuffer);
 void init(void);
 void update(void);
-bool begin(int);
 
 
 /**
@@ -109,10 +108,13 @@ void init(void)
 							1);								// Divisor Latch Access
 
 	// Configure UART clock for baud rate
+	//We will use the 1% accurate 4 MHz Reference Clock as our Fast Clock
+	pac5xxx_sys_ccs_config(CCSCTL_CLKIN_CLKREF, CCSCTL_ACLKDIV_DIV1, CCSCTL_HCLKDIV_DIV1);
 
-
-	begin(9600);
-
+	// BAUD = 4 MHz/(9600*16) = 26.04167 -> divisor = 26; fractional: 0.04167*256 = 10.67
+	pac5xxx_uart_config_divisor_latch(26);
+	pac5xxx_uart_config_fractional_divisor(10);
+	
 	// Configure UART peripheral for access to FIFO from this point on
 	pac5xxx_uart_fifo_access();
 
@@ -127,82 +129,6 @@ void init(void)
 	SysTick->LOAD = CYCLE;
 	SysTick->VAL = 0;
 	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk +  SysTick_CTRL_CLKSOURCE_Msk + SysTick_CTRL_TICKINT_Msk);
-}
-
-bool begin(int baud)
-{
-	//We will use the 1% accurate 4 MHz Reference Clock as our Fast Clock
-	pac5xxx_sys_ccs_config(CCSCTL_CLKIN_CLKREF, CCSCTL_ACLKDIV_DIV1, CCSCTL_HCLKDIV_DIV1);
-
-	// BAUD = 4 MHz/(9600*16) = 26.04167 -> divisor = 26; fractional: 0.04167*256 = 10.67
-	// 38400 = 6 & 131
-
-	switch(baud)
-	{
-	case 300:
-		pac5xxx_uart_config_divisor_latch(10416);
-		pac5xxx_uart_config_fractional_divisor(171);
-		break;
-	case 600:
-		pac5xxx_uart_config_divisor_latch(5208);
-		pac5xxx_uart_config_fractional_divisor(85);
-		break;
-	case 900:
-		pac5xxx_uart_config_divisor_latch(3472);
-		pac5xxx_uart_config_fractional_divisor(57);
-		break;
-	case 1200:
-		pac5xxx_uart_config_divisor_latch(2604);
-		pac5xxx_uart_config_fractional_divisor(43);
-		break;
-	case 2400:
-		pac5xxx_uart_config_divisor_latch(1302);
-		pac5xxx_uart_config_fractional_divisor(21);
-		break;
-	case 4800:
-		pac5xxx_uart_config_divisor_latch(651);
-		pac5xxx_uart_config_fractional_divisor(11);
-		break;
-	case 9600:
-		pac5xxx_uart_config_divisor_latch(26);
-		pac5xxx_uart_config_fractional_divisor(10);
-		break;
-	case 19200:
-		pac5xxx_uart_config_divisor_latch(162);
-		pac5xxx_uart_config_fractional_divisor(195);
-		break;
-	case 38400:
-		pac5xxx_uart_config_divisor_latch(81);
-		pac5xxx_uart_config_fractional_divisor(97);
-		break;
-	case 57600:
-		pac5xxx_uart_config_divisor_latch(54);
-		pac5xxx_uart_config_fractional_divisor(65);
-		break;
-	case 115200:
-		pac5xxx_uart_config_divisor_latch(27);
-		pac5xxx_uart_config_fractional_divisor(33);
-		break;
-	case 230400:
-		pac5xxx_uart_config_divisor_latch(13);
-		pac5xxx_uart_config_fractional_divisor(144);
-		break;
-	case 460800:
-		pac5xxx_uart_config_divisor_latch(6);
-		pac5xxx_uart_config_fractional_divisor(200);
-		break;
-	case 921600:
-		pac5xxx_uart_config_divisor_latch(3);
-		pac5xxx_uart_config_fractional_divisor(100);
-		break;
-	case 1382400:
-		pac5xxx_uart_config_divisor_latch(2);
-		pac5xxx_uart_config_fractional_divisor(66);
-		break;
-	default:
-		return false;
-	}
-	return true;
 }
 
 
